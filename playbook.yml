@@ -11,13 +11,9 @@
     PATH: '{{ tools_path }}:{{ ansible_env.PATH }}'
     DOTNET_ROOT: "{{ dotnet_root }}"
   tasks:
-    - name: Update pacman database
-      tags: never
-      pacman: update_cache=yes
     - name: Install Mono and .NET
       become: yes
-      pacman:
-        name: mono,dotnet-sdk
+      pacman: name=mono,dotnet-sdk update_cache=yes
     - name: Add .NET tools to $PATH
       lineinfile:
         path: ~/.bashrc
