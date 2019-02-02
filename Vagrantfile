@@ -8,8 +8,4 @@ Vagrant.configure('2') do |config|
     ansible.compatibility_mode = '2.0'
     ansible.playbook = 'playbook.yml'
   end
-
-  config.vm.provider :virtualbox do |v|
-    v.cpus = 2
-  end
 end
