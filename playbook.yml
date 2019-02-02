@@ -1,0 +1,36 @@
+---
+- hosts: all
+  vars:
+    dotnet_root: "{{ ansible_env.HOME }}/.dotnet"
+    tools_path: "{{ dotnet_root }}/tools"
+    tools:
+      - dotnet-dev-certs
+      - dotnet-aspnet-codegenerator
+    dev_certs_command: dotnet dev-certs https
+  environment:
+    PATH: '{{ tools_path }}:{{ ansible_env.PATH }}'
+    DOTNET_ROOT: "{{ dotnet_root }}"
+  tasks:
+    - name: Update pacman database
+      tags: never
+      pacman: update_cache=yes
+    - name: Install Mono and .NET
+      become: yes
+      pacman:
+        name: mono,dotnet-sdk
+    - name: Add .NET tools to $PATH
+      lineinfile:
+        path: ~/.bashrc
+        line: 'export PATH="$PATH:{{ tools_path }}"'
+    - name: Install some .NET tools
+      shell: dotnet tool install --global {{ item }}
+      register: install_result
+      failed_when:
+        - "install_result.rc != 0"
+        - "'already installed' not in install_result.stderr"
+      changed_when: "'successfully installed' in install_result.stdout"
+      loop: "{{ tools }}"
+    - name: Install HTTPS certificates
+      shell: dotnet dev-certs https
+      register: certs_result
+      changed_when: "'generated successfully' in certs_result.stdout"
