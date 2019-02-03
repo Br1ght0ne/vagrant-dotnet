@@ -2,22 +2,27 @@
 - hosts: all
   vars:
     dotnet_root: "{{ ansible_env.HOME }}/.dotnet"
-    tools_path: "{{ dotnet_root }}/tools"
+    dotnet_tools: "{{ dotnet_root }}/tools"
+    packages:
+      arch: ['mono', 'dotnet-sdk']
     tools:
       - dotnet-dev-certs
       - dotnet-aspnet-codegenerator
-    dev_certs_command: dotnet dev-certs https
   environment:
-    PATH: '{{ tools_path }}:{{ ansible_env.PATH }}'
+    PATH: '{{ dotnet_tools }}:{{ ansible_env.PATH }}'
     DOTNET_ROOT: "{{ dotnet_root }}"
   tasks:
-    - name: Install Mono and .NET
+    - name: Install Mono and .NET via pacman
+      tags: arch
       become: yes
-      pacman: name=mono,dotnet-sdk update_cache=yes
+      when: "'Arch' in ansible_facts['distribution']"
+      pacman:
+        name: '{{ packages.arch }}'
+        update_cache: yes
     - name: Add .NET tools to $PATH
       lineinfile:
         path: ~/.bashrc
-        line: 'export PATH="$PATH:{{ tools_path }}"'
+        line: 'export PATH="$PATH:{{ dotnet_tools }}"'
     - name: Install some .NET tools
       shell: dotnet tool install --global {{ item }}
       register: install_result
