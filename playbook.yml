@@ -5,6 +5,7 @@
     dotnet_tools: "{{ dotnet_root }}/tools"
     packages:
       arch: ['mono', 'dotnet-sdk']
+      ubuntu: ['apt-transport-https', 'mono-complete', 'dotnet-sdk-2.2']
     tools:
       - dotnet-dev-certs
       - dotnet-aspnet-codegenerator
@@ -19,6 +20,27 @@
       pacman:
         name: '{{ packages.arch }}'
         update_cache: yes
+    - when: ansible_os_family == 'Debian'
+      tags: ubuntu
+      become: yes
+      block:
+      - name: Add Mono repository key
+        shell: apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
+        register: import_key
+        changed_when: "'imported' in import_key.stderr"
+        # apt_key:
+        #   keyserver: keyserver.ubuntu.com
+        #   id: 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
+      - name: Add Mono repository
+        apt_repository:
+          repo: deb https://download.mono-project.com/repo/ubuntu stable-bionic main
+      - name: Install .NET config package
+        apt:
+          deb: https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb
+      - name: Install Mono and .NET via apt
+        apt:
+          name: '{{ packages.ubuntu }}'
+          update_cache: yes
     - name: Add .NET tools to $PATH
       lineinfile:
         path: ~/.bashrc
